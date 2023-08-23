@@ -3,15 +3,15 @@ import axios from 'axios';
 
 import { showAlert } from './alert';
 
-export const UpdateUser = async (email, name) => {
+export const UpdateUser = async data => {
+  for (let val of data.entries()) {
+    console.log(val);
+  }
   try {
     const res = await axios({
       method: 'PATCH',
       url: `http://127.0.0.1:3000/api/v1/users/updateMe`,
-      data: {
-        name,
-        email
-      }
+      data
     });
 
     if (res.data.status === 'success') {

@@ -24,7 +24,12 @@ router.patch(
   authController.updatePassword
 );
 
-router.patch('/updateMe', userControler.updateMe);
+router.patch(
+  '/updateMe',
+  userControler.uploadUserPhoto,
+  userControler.resizeUserImage,
+  userControler.updateMe
+);
 
 router.delete('/deleteMe', userControler.deleteMe);
 

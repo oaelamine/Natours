@@ -20,7 +20,8 @@ const userSchema = new mongouse.Schema({
     validate: [isEmail, 'Please provide a valide email']
   },
   photo: {
-    type: String
+    type: String,
+    default: 'default.jpg'
   },
   password: {
     type: String,

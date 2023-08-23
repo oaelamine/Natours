@@ -1,8 +1,53 @@
+const multer = require('multer');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const sharp = require('sharp');
+
 const AppError = require('../utils/appError');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 
 const factory = require('./../controlers/handlerFactory');
+
+// const multerStoreg = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'public/img/users');
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   }
+// });
+
+// puting the image in a buffer
+const multerStoreg = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new AppError(400, 'This is not an image, please upload an image'),
+      false
+    );
+  }
+};
+
+exports.resizeUserImage = (req, res, next) => {
+  if (!req.file) return next();
+  req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+  sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/users/${req.file.filename}`);
+
+  next();
+};
+
+const upload = multer({ storage: multerStoreg, fileFilter: multerFilter });
+
+exports.uploadUserPhoto = upload.single('photo');
 
 //FUNCTIONS
 const filterBody = (body, ...fields) => {
@@ -58,6 +103,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   // 2) check if the user exists, and update
   // 2. 1) filter the req.body for unwanted fields
   const info = filterBody(req.body, 'name', 'email');
+  if (req.file) info.photo = req.file.filename;
+
   const updatedUser = await User.findByIdAndUpdate(req.user.id, info, {
     new: true,
     runValidator: true

@@ -26,18 +26,23 @@ if (logOutBtn) {
   logOutBtn.addEventListener('click', logout);
 }
 
-// UPDATE user name and email INFO
+// UPDATE user name and email and photo INFO
 if (form_user_data) {
   form_user_data.addEventListener('submit', function(e) {
     e.preventDefault();
-    const email = document.getElementById('email').value;
-    const name = document.getElementById('name').value;
-    UpdateUser(email, name);
+
+    //recreating a multipart/form-data
+    const form = new FormData();
+
+    form.append('name', document.getElementById('name').value);
+    form.append('email', document.getElementById('email').value);
+    form.append('photo', document.getElementById('photo').files[0]);
+
+    UpdateUser(form);
   });
 }
 
 // UPDATE USER PASSWORD
-
 if (form_user_settings) {
   form_user_settings.addEventListener('submit', async function(e) {
     e.preventDefault();
