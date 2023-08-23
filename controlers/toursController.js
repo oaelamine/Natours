@@ -1,8 +1,70 @@
+const multer = require('multer');
+// eslint-disable-next-line import/no-extraneous-dependencies
+const sharp = require('sharp');
+
 const Tour = require('./../models/tourModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 
 const factory = require('./../controlers/handlerFactory');
+
+// multer setup
+const multerStroage = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(
+      new AppError(400, 'thees fiels are not images, please upload images'),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  storage: multerStroage,
+  fileFilter: multerFilter
+});
+
+exports.resizeYourImages = catchAsync(async (req, res, next) => {
+  if (!req.files.imageCover || !req.files.images) return next();
+
+  // 1) Cover Image
+
+  // putt the imageCover in the req.body object
+  req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+
+  //RESIZING THE IMAGE AND STOR4IT IN THE DISK
+  await sharp(req.files.imageCover[0].buffer)
+    .resize(2000, 1333)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/tours/${req.body.imageCover}`);
+
+  // 1) Images
+  req.body.images = [];
+
+  const tratedImages = req.files.images.map(async (img, inedx) => {
+    const imageName = `tour-${req.params.id}-${Date.now()}-${inedx + 1}.jpeg`;
+
+    await sharp(img.buffer)
+      .resize(2000, 1333)
+      .toFormat('jpeg')
+      .jpeg({ quality: 90 })
+      .toFile(`public/img/tours/${imageName}`);
+
+    req.body.images.push(imageName);
+  });
+
+  await Promise.all(tratedImages);
+  next();
+});
+
+exports.uploadTourImages = upload.fields([
+  { name: 'imageCover', maxCount: 1 },
+  { name: 'images', maxCount: 3 }
+]);
 
 //MIDELWEAR
 exports.aliasTopTours = (req, res, next) => {
